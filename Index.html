@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Micrófono Remoto - Celular a PC</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+            100% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+        
+        .pulse-animation {
+            animation: pulse-ring 2s infinite;
+        }
+        
+        @keyframes sound-wave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.5); }
+        }
+        
+        .sound-bar {
+            animation: sound-wave 0.5s ease-in-out infinite;
+        }
+        
+        .sound-bar:nth-child(2) { animation-delay: 0.1s; }
+        .sound-bar:nth-child(3) { animation-delay: 0.2s; }
+        .sound-bar:nth-child(4) { animation-delay: 0.3s; }
+        .sound-bar:nth-child(5) { animation-delay: 0.4s; }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-4xl">
+        <!-- Contenedor Principal -->
+        <div class="glass-effect rounded-2xl shadow-2xl p-8 text-white">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold mb-2">
+                    <i class="fas fa-microphone-alt mr-3"></i>
+                    Micrófono Remoto
+                </h1>
+                <p class="text-lg opacity-90">Usa el micrófono de tu celular en tu PC</p>
+            </div>
+
+            <!-- Selector de Dispositivo -->
+            <div class="mb-8">
+                <div class="flex justify-center space-x-4 mb-6">
+                    <button id="pcMode" class="px-6 py-3 rounded-lg bg-white bg-opacity-20 hover:bg-opacity-30 transition-all duration-300 font-semibold">
+                        <i class="fas fa-desktop mr-2"></i> Modo PC
+                    </button>
+                    <button id="mobileMode" class="px-6 py-3 rounded-lg bg-white bg-opacity-10 hover:bg-opacity-20 transition-all duration-300 font-semibold">
+                        <i class="fas fa-mobile-alt mr-2"></i> Modo Celular
+                    </button>
+                </div>
+            </div>
+
+            <!-- Contenido Dinámico -->
+            <div id="content" class="min-h-[400px]">
+                <!-- Vista inicial -->
+                <div id="initialView" class="text-center">
+                    <div class="mb-8">
+                        <i class="fas fa-exchange-alt text-6xl mb-4 opacity-70"></i>
+                        <p class="text-xl">Selecciona un modo para comenzar</p>
+                    </div>
+                </div>
+
+                <!-- Vista PC -->
+                <div id="pcView" class="hidden">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-semibold mb-4">Configuración en PC</h2>
+                        
+                        <!-- Generar Código -->
+                        <div id="codeSection" class="mb-6">
+                            <button id="generateCode" class="px-8 py-4 bg-blue-500 hover:bg-blue-600 rounded-lg font-semibold text-lg transition-all duration-300 transform hover:scale-105">
+                                <i class="fas fa-key mr-2"></i> Generar Código de Conexión
+                            </button>
+                        </div>
+
+                        <!-- Código Generado -->
+                        <div id="codeDisplay" class="hidden mb-6">
+                            <p class="text-lg mb-2">Tu código de conexión:</p>
+                            <div class="bg-white bg-opacity-20 rounded-lg p-4 inline-block">
+                                <span id="roomCode" class="text-3xl font-mono font-bold tracking-wider"></span>
+                            </div>
+                            <p class="text-sm mt-2 opacity-80">Ingresa este código en tu celular</p>
+                        </div>
+
+                        <!-- Estado de Conexión -->
+                        <div id="connectionStatus" class="hidden mb-6">
+                            <div class="flex items-center justify-center space-x-3 mb-4">
+                                <div id="statusIndicator" class="w-4 h-4 bg-yellow-400 rounded-full"></div>
+                                <span id="statusText" class="text-lg">Esperando conexión...</span>
+                            </div>
+                            
+                            <!-- Visualizador de Audio -->
+                            <div id="audioVisualizer" class="hidden">
+                                <p class="mb-2">Audio recibido:</p>
+                                <div class="flex justify-center items-end space-x-1 h-20">
+                                    <div class="sound-bar w-2 bg-green-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-green-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-green-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-green-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-green-400 rounded-t"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Controles -->
+                        <div id="controls" class="hidden">
+                            <button id="stopConnection" class="px-6 py-3 bg-red-500 hover:bg-red-600 rounded-lg font-semibold transition-all duration-300">
+                                <i class="fas fa-stop mr-2"></i> Detener Conexión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vista Celular -->
+                <div id="mobileView" class="hidden">
+                    <div class="text-center">
+                        <h2 class="text-2xl font-semibold mb-4">Conectar desde Celular</h2>
+                        
+                        <!-- Ingresar Código -->
+                        <div id="codeInputSection" class="mb-6">
+                            <p class="mb-4">Ingresa el código generado en tu PC:</p>
+                            <input 
+                                type="text" 
+                                id="codeInput" 
+                                class="w-full max-w-xs mx-auto px-4 py-3 rounded-lg bg-white bg-opacity-20 text-white placeholder-gray-300 text-center text-xl font-mono tracking-wider"
+                                placeholder="XXXX-XXXX"
+                                maxlength="9"
+                                pattern="[A-Z0-9]{4}-[A-Z0-9]{4}"
+                            >
+                            <button id="connectBtn" class="mt-4 px-8 py-3 bg-green-500 hover:bg-green-600 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105">
+                                <i class="fas fa-link mr-2"></i> Conectar
+                            </button>
+                        </div>
+
+                        <!-- Estado de Conexión Celular -->
+                        <div id="mobileStatus" class="hidden">
+                            <div class="mb-6">
+                                <div id="micIndicator" class="inline-block p-6 rounded-full bg-red-500 pulse-animation">
+                                    <i class="fas fa-microphone text-4xl"></i>
+                                </div>
+                                <p class="mt-4 text-lg">Transmitiendo audio...</p>
+                            </div>
+                            
+                            <!-- Visualizador de Audio Celular -->
+                            <div class="mb-6">
+                                <p class="mb-2">Nivel de audio:</p>
+                                <div class="flex justify-center items-end space-x-1 h-20">
+                                    <div class="sound-bar w-2 bg-red-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-red-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-red-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-red-400 rounded-t"></div>
+                                    <div class="sound-bar w-2 bg-red-400 rounded-t"></div>
+                                </div>
+                            </div>
+
+                            <button id="stopMobile" class="px-6 py-3 bg-red-500 hover:bg-red-600 rounded-lg font-semibold transition-all duration-300">
+                                <i class="fas fa-stop mr-2"></i> Detener Transmisión
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instrucciones -->
+            <div class="mt-8 pt-8 border-t border-white border-opacity-20">
+                <h3 class="text-lg font-semibold mb-3">Instrucciones:</h3>
+                <ol class="list-decimal list-inside space-y-2 text-sm opacity-90">
+                    <li>Abre esta página en tu PC y selecciona "Modo PC"</li>
+                    <li>Genera un código de conexión</li>
+                    <li>Abre la misma página en tu celular y selecciona "Modo Celular"</li>
+                    <li>Ingresa el código en tu celular y conecta</li>
+                    <li>Permite el acceso al micrófono cuando se solicite</li>
+                    <li>¡Listo! El audio de tu celular se transmitirá a tu PC</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-50"></div>
+
+    <script>
+        // Variables globales
+        let currentMode = null;
+        let roomCode = null;
+        let peerConnection = null;
+        let localStream = null;
+        let remoteStream = null;
+        let socket = null;
+
+        // Configuración WebRTC
+        const rtcConfiguration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        // Elementos del DOM
+        const pcModeBtn = document.getElementById('pcMode');
+        const mobileModeBtn = document.getElementById('mobileMode');
+        const initialView = document.getElementById('initialView');
+        const pcView = document.getElementById('pcView');
+        const mobileView = document.getElementById('mobileView');
+        const generateCodeBtn = document.getElementById('generateCode');
+        const codeDisplay = document.getElementById('codeDisplay');
+        const roomCodeSpan = document.getElementById('roomCode');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusText = document.getElementById('statusText');
+        const audioVisualizer = document.getElementById('audioVisualizer');
+        const controls = document.getElementById('controls');
+        const stopConnectionBtn = document.getElementById('stopConnection');
+        const codeInput = document.getElementById('codeInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const codeInputSection = document.getElementById('codeInputSection');
+        const mobileStatus = document.getElementById('mobileStatus');
+        const micIndicator = document.getElementById('micIndicator');
+        const stopMobileBtn = document.getElementById('stopMobile');
+
+        // Event Listeners
+        pcModeBtn.addEventListener('click', () => setMode('pc'));
+        mobileModeBtn.addEventListener('click', () => setMode('mobile'));
+        generateCodeBtn.addEventListener('click', generateRoomCode);
+        stopConnectionBtn.addEventListener('click', stopConnection);
+        connectBtn.addEventListener('click', connectToRoom);
+        stopMobileBtn.addEventListener('click', stopMobileTransmission);
+
+        // Formateo de código
+        codeInput.addEventListener('input', (e) => {
+            let value = e.target.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+            if (value.length > 4) {
+                value = value.slice(0, 4) + '-' + value.slice(4, 8);
+            }
+            e.target.value = value;
+        });
+
+        // Funciones principales
+        function setMode(mode) {
+            currentMode = mode;
+            
+            // Actualizar estilos de botones
+            if (mode === 'pc') {
+                pcModeBtn.classList.add('bg-white', 'bg-opacity-30');
+                pcModeBtn.classList.remove('bg-opacity-20');
+                mobileModeBtn.classList.remove('bg-white', 'bg-opacity-30');
+                mobileModeBtn.classList.add('bg-opacity-10');
+                
+                initialView.classList.add('hidden');
+                mobileView.classList.add('hidden');
+                pcView.classList.remove('hidden');
+            } else {
+                mobileModeBtn.classList.add('bg-white', 'bg-opacity-30');
+                mobileModeBtn.classList.remove('bg-opacity-10');
+                pcModeBtn.classList.remove('bg-white', 'bg-opacity-30');
+                pcModeBtn.classList.add('bg-opacity-20');
+                
+                initialView.classList.add('hidden');
+                pcView.classList.add('hidden');
+                mobileView.classList.remove('hidden');
+            }
+        }
+
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            roomCode = '';
+            for (let i = 0; i < 4; i++) {
+                roomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            roomCode += '-';
+            for (let i = 0; i < 4; i++) {
+                roomCode += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            
+            roomCodeSpan.textContent = roomCode;
+            codeDisplay.classList.remove('hidden');
+            generateCodeBtn.classList.add('hidden');
+            
+            // Iniciar servidor WebSocket simulado
+            startSignalingServer();
+            
+            showToast('Código generado: ' + roomCode, 'success');
+        }
+
+        function startSignalingServer() {
+            // Simulación de servidor de señalización
+            // En una implementación real, esto se conectaría a un servidor WebSocket
+            connectionStatus.classList.remove('hidden');
+            updateConnectionStatus('waiting', 'Esperando conexión...');
+            
+            // Simular espera de conexión
+            setTimeout(() => {
+                if (currentMode === 'pc' && roomCode) {
+                    // Aquí se implementaría la lógica real de WebRTC
+                    showToast('Listo para recibir conexión', 'info');
+                }
+            }, 1000);
+        }
+
+        async function connectToRoom() {
+            const code = codeInput.value.trim();
+            if (!code || code.length !== 9) {
+                showToast('Por favor ingresa un código válido', 'error');
+                return;
+            }
+            
+            try {
+                // Solicitar permiso de micrófono
+                localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    } 
+                });
+                
+                // Crear conexión peer
+                peerConnection = new RTCPeerConnection(rtcConfiguration);
+                
+                // Agregar stream local
+                localStream.getTracks().forEach(track => {
+                    peerConnection.addTrack(track, localStream);
+                });
+                
+                // Manejar eventos ICE
+                peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        // Enviar candidato al peer (simulado)
+                        console.log('ICE candidate:', event.candidate);
+                    }
+                };
+                
+                // Manejar stream remoto
+                peerConnection.ontrack = (event) => {
+                    remoteStream = event.streams[0];
+                    // Aquí se reproduciría el audio si fuera necesario
+                };
+                
+                // Crear oferta
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+                
+                // Simular conexión establecida
+                codeInputSection.classList.add('hidden');
+                mobileStatus.classList.remove('hidden');
+                
+                // Iniciar visualización de audio
+                startAudioVisualization();
+                
+                showToast('¡Conectado! Transmitiendo audio...', 'success');
+                
+            } catch (error) {
+                console.error('Error al conectar:', error);
+                showToast('Error al acceder al micrófono', 'error');
+            }
+        }
+
+        function startAudioVisualization() {
+            // Simulación de visualización de audio
+            // En una implementación real, se usaría Web Audio API
+            const soundBars = document.querySelectorAll('.sound-bar');
+            
+            setInterval(() => {
+                soundBars.forEach(bar => {
+                    const height = Math.random() * 60 + 20;
+                    bar.style.height = height + 'px';
+                });
+            }, 200);
+        }
+
+        function updateConnectionStatus(status, text) {
+            statusIndicator.className = 'w-4 h-4 rounded-full';
+            
+            switch(status) {
+                case 'waiting':
+                    statusIndicator.classList.add('bg-yellow-400');
+                    break;
+                case 'connected':
+                    statusIndicator.classList.add('bg-green-400');
+                    audioVisualizer.classList.remove('hidden');
+                    controls.classList.remove('hidden');
+                    startAudioVisualization();
+                    break;
+                case 'error':
+                    statusIndicator.classList.add('bg-red-400');
+                    break;
+            }
+            
+            statusText.textContent = text;
+        }
+
+        function stopConnection() {
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(track => track.stop());
+                remoteStream = null;
+            }
+            
+            // Resetear UI
+            codeDisplay.classList.add('hidden');
+            connectionStatus.classList.add('hidden');
+            audioVisualizer.classList.add('hidden');
+            controls.classList.add('hidden');
+            generateCodeBtn.classList.remove('hidden');
+            roomCode = null;
+            
+            showToast('Conexión detenida', 'info');
+        }
+
+        function stopMobileTransmission() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            // Resetear UI
+            mobileStatus.classList.add('hidden');
+            codeInputSection.classList.remove('hidden');
+            codeInput.value = '';
+            
+            showToast('Transmisión detenida', 'info');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const bgColor = type === 'success' ? 'bg-green-500' : 
+                           type === 'error' ? 'bg-red-500' : 'bg-blue-500';
+            
+            toast.className = `${bgColor} text-white px-6 py-3 rounded-lg shadow-lg mb-2 transform transition-all duration-300 translate-x-full`;
+            toast.textContent = message;
+            
+            document.getElementById('toastContainer').appendChild(toast);
+            
+            // Animar entrada
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+
+        // Detectar dispositivo móvil
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Auto-seleccionar modo según dispositivo
+        window.addEventListener('load', () => {
+            if (isMobile()) {
+                setMode('mobile');
+            }
+        });
+    </script>
+</body>
+</html>
